@@ -26,7 +26,9 @@ public class ConsoleWriter {
         System.out.println("Игрок " + lastName + " " + firstName);
     }
 
-    public void printField(BattleField field) {
+    public static final char SYMBOL_SHIP_DEBUG = '■'; // или 'O'
+
+    public void printField(BattleField field, boolean debugMode) {
         System.out.println("    А   Б   В   Г   Д   Е   Ж   З   И   К");
         System.out.println("  ┌───────────────────────────────────────┐");
 
@@ -39,12 +41,19 @@ public class ConsoleWriter {
                     symbol = SYMBOL_MISS;
                 } else if (state == CellState.SHIP_HIT) {
                     symbol = SYMBOL_HIT;
+                } else if (debugMode && state == CellState.SHIP_CLOSED) {
+                    symbol = SYMBOL_SHIP_DEBUG;
                 }
                 System.out.print(" " + symbol + "  ");
             }
             System.out.println("│");
         }
         System.out.println("  └───────────────────────────────────────┘");
+    }
+
+    // Старый метод оставляем для совместимости, чтобы он вызывал обычный режим
+    public void printField(BattleField field) {
+        printField(field, false);
     }
 
     public void printMessage(String message) {

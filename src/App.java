@@ -15,28 +15,46 @@ public class App {
         ConsoleWriter writer = new ConsoleWriter();
 
         String lastShotResult = "";
+        boolean debugMode = false; // Флаг для проверки расстановки кораблей
 
         while (!battleField.areAllShipsSunk()) {
             writer.clearConsole();
             writer.printGreeting(lastName, firstName);
-            writer.printField(battleField);
+            writer.printField(battleField, debugMode);
 
             if (!lastShotResult.isEmpty()) {
                 writer.printMessage("Результат: " + lastShotResult);
             }
 
             int[] coords = reader.readCoordinates();
-            if (coords == null) {
+
+            // 1. Проверка на команду ВЫХОД
+            if (coords == AimReader.COMMAND_EXIT) {
                 writer.printMessage("Игра прервана пользователем.");
                 return;
             }
 
+            // 2. Проверка на команду НОВАЯ ИГРА
+            if (coords == AimReader.COMMAND_NEW_GAME) {
+                battleField.initNewGame(); // Пересоздаём пустое поле и расставляем корабли заново
+                lastShotResult = "Начата новая игра! Корабли переставлены.";
+                continue;
+            }
+
+            // 3. Проверка на команду ОТЛАДКА (для проверки работы алгоритма расстановки)
+            if (coords == AimReader.COMMAND_DEBUG) {
+                debugMode = !debugMode;
+                lastShotResult = "Режим проверки расстановки: " + (debugMode ? "ВКЛ" : "ВЫКЛ");
+                continue;
+            }
+
+            // 4. Обычный выстрел
             lastShotResult = cannon.fire(coords[0], coords[1]);
         }
 
         writer.clearConsole();
         writer.printGreeting(lastName, firstName);
-        writer.printField(battleField);
+        writer.printField(battleField, debugMode);
         writer.printMessage("Поздравляем! Все корабли потоплены!");
     }
 }

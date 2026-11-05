@@ -1,40 +1,78 @@
 package model;
 
+import java.util.Random;
+
 public class BattleField {
     public static final int SIZE = 10;
+    private static final int[] SHIP_SIZES = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
 
     private final CellState[][] field = new CellState[SIZE][SIZE];
     private final Ship[][] shipsGrid = new Ship[SIZE][SIZE];
+    private final Random random = new Random(); // Без фиксированного seed для уникальных расстановок
     private int totalShipsDecks = 0;
 
     public BattleField() {
+        initNewGame();
+    }
+
+    // Метод для инициализации и сброса поля (пригодится и при старте, и при перезапуске)
+    public final void initNewGame() {
         initEmptyField();
-        placeStaticShips();
+        placeRandomShips();
     }
 
     private void initEmptyField() {
+        totalShipsDecks = 0;
         for (int r = 0; r < SIZE; r++) {
             for (int c = 0; c < SIZE; c++) {
                 field[r][c] = CellState.EMPTY_CLOSED;
+                shipsGrid[r][c] = null; // Очищаем старые корабли при перезапуске
             }
         }
     }
 
-    // Статическая расстановка классического набора кораблей (1х4, 2х3, 3х2, 4х1)
-    private void placeStaticShips() {
-        placeShip(new Ship(4), 6, 1, true);  // 4-палубный: строка 7 (индекс 6), Б-Д
+    public void placeRandomShips() {
+        for (int decks : SHIP_SIZES) {
+            boolean placed = false;
+            while (!placed) {
+                int row = random.nextInt(SIZE);
+                int col = random.nextInt(SIZE);
+                boolean horizontal = random.nextBoolean();
 
-        placeShip(new Ship(3), 0, 0, false); // 3-палубный: А1-А3
-        placeShip(new Ship(3), 2, 8, false); // 3-палубный: И3-И5
+                if (canPlaceShip(decks, row, col, horizontal)) {
+                    placeShip(new Ship(decks), row, col, horizontal);
+                    placed = true;
+                }
+            }
+        }
+    }
 
-        placeShip(new Ship(2), 2, 1, false); // 2-палубный: Б3-Б4 (как в прототипе)
-        placeShip(new Ship(2), 0, 4, true);  // 2-палубный: Д1-Е1
-        placeShip(new Ship(2), 9, 5, true);  // 2-палубный: Е10-Ж10
+    // Проверка: помещается ли корабль и нет ли рядом других кораблей
+    private boolean canPlaceShip(int decks, int row, int col, boolean horizontal) {
+        for (int i = 0; i < decks; i++) {
+            int r = horizontal ? row : row + i;
+            int c = horizontal ? col + i : col;
 
-        placeShip(new Ship(1), 3, 5, true);  // 1-палубный: Е4 (как в прототипе)
-        placeShip(new Ship(1), 8, 1, true);  // 1-палубный: Б9
-        placeShip(new Ship(1), 5, 6, true);  // 1-палубный: Ж6
-        placeShip(new Ship(1), 9, 9, true);  // 1-палубный: К10
+            // 1. Проверка выхода за границы поля
+            if (r >= SIZE || c >= SIZE) {
+                return false;
+            }
+
+            // 2. Проверка самой клетки и всех соседних клеток (включая диагонали)
+            for (int dr = -1; dr <= 1; dr++) {
+                for (int dc = -1; dc <= 1; dc++) {
+                    int nr = r + dr;
+                    int nc = c + dc;
+                    // Если соседняя клетка в пределах поля и там уже есть корабль — ставить нельзя
+                    if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+                        if (field[nr][nc] == CellState.SHIP_CLOSED) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void placeShip(Ship ship, int row, int col, boolean horizontal) {
